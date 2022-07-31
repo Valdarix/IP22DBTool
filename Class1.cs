@@ -10,11 +10,15 @@ namespace IndyPro22DatabaseManagementTool
 {
     internal class DB
     {
-     
 
-        public static void UpdateOrInsert(string query)
+        private static string dbName;
+
+        public static void SetDb(string db)
         {
-            var dbName = $"URI=file:E:\\Unity Projects\\IndyWrestling\\Assets\\StreamingAssets\\MamasHomeCooking\\DONOTDELETE\\elevenherbsandspices.ip2";
+            dbName = db;
+        }
+        public static void UpdateOrInsert(string query)
+        {           
             using var connection = new SQLiteConnection(dbName);
             connection.Open();
             using var cmd = connection.CreateCommand();
@@ -25,8 +29,8 @@ namespace IndyPro22DatabaseManagementTool
 
 
         public static DataTable GetDataReader(string query)
-        {
-            var dbName = $"URI=file:E:\\Unity Projects\\IndyWrestling\\Assets\\StreamingAssets\\MamasHomeCooking\\DONOTDELETE\\elevenherbsandspices.ip2";
+        {         
+            //var dbName = $"URI=file:E:\\Unity Projects\\IndyWrestling\\Assets\\StreamingAssets\\MamasHomeCooking\\DONOTDELETE\\elevenherbsandspices.ip2";
             using var connection = new SQLiteConnection(dbName);
             connection.Open();
             using var cmd = connection.CreateCommand();

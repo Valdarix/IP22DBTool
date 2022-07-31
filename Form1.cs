@@ -3,14 +3,37 @@ using Microsoft.VisualBasic.FileIO;
 using BingMapsRESTToolkit;
 using System.Text;
 using System.Globalization;
+using Microsoft.Web.WebView2.Core;
 
 namespace IndyPro22DatabaseManagementTool
 {
     public partial class Form1 : Form
     {
+        string filePath = string.Empty;
+        enum SocialMedia
+        {
+            FaceBook,
+            Twitter, 
+            Instgram,
+            Twitch,
+            TikTok,
+            URL,
+            YouTube
+        }
+
+        SocialMedia currentSM;
+
         public Form1()
         {
             InitializeComponent();
+            this.Resize += new System.EventHandler(this.Form_Resize);
+            
+        }
+        private void Form_Resize(object sender, EventArgs e)
+        {
+            webView.Size = this.ClientSize - new System.Drawing.Size(webView.Location);
+            goButton.Left = this.ClientSize.Width - goButton.Width;
+            addressBar.Width = goButton.Left - addressBar.Left;
         }
 
         private void Form1_Load(object sender, EventArgs e)
@@ -33,7 +56,12 @@ namespace IndyPro22DatabaseManagementTool
         private void listBox1_SelectedIndexChanged(object sender, EventArgs e)
         {
 
-            
+            if (filePath == string.Empty)
+            {
+                GetFilePath();
+                return;
+            }
+
             switch (listBox1.SelectedIndex)
             {
                 case 0:
@@ -63,6 +91,7 @@ namespace IndyPro22DatabaseManagementTool
 
         private void listView1_SelectedIndexChanged(object sender, EventArgs e)
         {
+            addressBar.Clear();
             rawDataList.Items.Clear();
             edtBio.Clear();
             edtLat.Clear();
@@ -70,6 +99,7 @@ namespace IndyPro22DatabaseManagementTool
             if (listView1.SelectedItems.Count == 0)
                 return;
             var selected = listView1.SelectedItems[0].Text;
+            selected = selected.Replace("'", "''");
             //Now load the talent. 
             var reader = DB.GetDataReader($"Select * from Talent left join TalentBio on TALENT_ID = ID where Name = '{selected}'");
             foreach (DataRow row in reader.Rows)
@@ -121,6 +151,8 @@ namespace IndyPro22DatabaseManagementTool
                 edtDyr.Text = t.debutYear;
                 edtBio.Text = t.Bio;
                 cbRef.Checked = t.Ref > 0;
+                cbOldSchool.Checked = t.OldSchool > 0;
+                cbCruiserweight.Checked = t.Cruiser > 0;
 
             }
             var reader1 = DB.GetDataReader($"Select * from RawTalent where RingName like '%{selected}%'");
@@ -140,6 +172,11 @@ namespace IndyPro22DatabaseManagementTool
         }
 
         private async void button1_Click(object sender, EventArgs e)
+        {
+            GetLatLong();
+        }
+
+        public async void GetLatLong()
         {
             var req = new GeocodeRequest();
             req.BingMapsKey = "AvrksM67bdtn2IAeV-Ovkm2DwWbYaNPa6xucbqQBVK8o081MQCPUF4MYvEDfpnD0";
@@ -176,7 +213,7 @@ namespace IndyPro22DatabaseManagementTool
             if (objName == "edtBio")
             {
                 ctrl = this.Controls.Find(objName, true).First() as RichTextBox;
-                ctrl.AppendText(Environment.NewLine + value);
+                ctrl.AppendText(Environment.NewLine + value.Replace("'","''"));
             }
             if (objName == "edtWork")
             {
@@ -186,9 +223,8 @@ namespace IndyPro22DatabaseManagementTool
             if (objName.Contains("edt") && objName != "edtBio" && objName != "edtWork")
             {
                 ctrl = this.Controls.Find(objName, true).First() as TextBox;
-              
-                    
-                ctrl.Text = value;
+                                 
+                ctrl.Text = value.Replace("\"","");
             }
             if (objName.Contains("State"))
             {
@@ -299,6 +335,7 @@ namespace IndyPro22DatabaseManagementTool
             listView1.Items.RemoveAt(selectedIndex);
             listView1.Items[selectedIndex].Selected = true;
             listView1.Select();
+            edtWork.Clear();
 
         }
 
@@ -312,7 +349,7 @@ namespace IndyPro22DatabaseManagementTool
 
         public string GetDBName()
         {
-            return edtWrok.Text;
+            return edtWork.Text;
         }
 
         // Handle Raw Data
@@ -367,6 +404,7 @@ namespace IndyPro22DatabaseManagementTool
 
         private async void rawDataList_Click(object sender, EventArgs e)
         {
+            string[] monthAbbrev = CultureInfo.CurrentCulture.DateTimeFormat.AbbreviatedMonthNames;
 
             var colSelected = ColList.Items[rawDataList.SelectedIndex].ToString();
             var data = rawDataList.Items[rawDataList.SelectedIndex].ToString();
@@ -381,8 +419,8 @@ namespace IndyPro22DatabaseManagementTool
                 {
                     //parse the date and post both
                     List<string> date = data.Split(' ').ToList();
-                    dynamic mth;
-                    dynamic year;
+                    dynamic mth = 1;
+                    dynamic year = 1900;
                     bool successfullyParsed = int.TryParse(date[0], out int ignoreMe);
                     if (successfullyParsed)
                     {
@@ -390,8 +428,7 @@ namespace IndyPro22DatabaseManagementTool
                         year = date[2];
                     }
                     else
-                    {
-
+                    {                        
                         //check if it is in date format
                         var d1 = DateTime.TryParse(data, out DateTime newDate);
                         if (d1)
@@ -400,15 +437,65 @@ namespace IndyPro22DatabaseManagementTool
                             mth = newDate.Month;
                             year = newDate.Year;
                         }
-                        else// must be in text format
+                        else if (data.IndexOf('-', StringComparison.Ordinal) > 0 && data.Any(x => char.IsLetter(x)))
+                        {
+                            date = data.Split('-').ToList();  
+                           
+                           var dateFormat1 = date[0];
+                           var isFullMonthname = System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.MonthGenitiveNames.Contains(dateFormat1);
+                           var isAbbMonthname = System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.AbbreviatedMonthGenitiveNames.Contains(dateFormat1);
+                           if (isFullMonthname || isAbbMonthname)
+                           {
+                               // Handle the first part being
+                               mth = dateFormat1;
+                               if (isAbbMonthname)
+                                    mth =   Array.IndexOf(monthAbbrev, mth) + 1;
+                               else
+                                    mth = DateTime.ParseExact(date[0], "MMMM", CultureInfo.CurrentCulture).Month;
+
+                            }
+                           var dateFormat2 = date[1];
+                           isFullMonthname = System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.MonthGenitiveNames.Contains(dateFormat2);
+                           isAbbMonthname = System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.AbbreviatedMonthGenitiveNames.Contains(dateFormat2);
+                           if (isFullMonthname || isAbbMonthname)
+                           {
+                               // Handle the first part being
+                               mth = dateFormat2;
+                                if (isAbbMonthname)
+                                    mth = Array.IndexOf(monthAbbrev, mth) + 1;
+                                else
+                                    mth = DateTime.ParseExact(date[0], "MMMM", CultureInfo.CurrentCulture).Month;
+
+                            }
+                            var ValidYear = int.TryParse(date[0], out int newDateYR);
+                            if (ValidYear)
+                            {                               
+                                year = int.Parse(date[0]);
+                            }
+                            ValidYear = int.TryParse(date[1], out int newDateYR2);
+                            if (ValidYear)
+                            {                              
+                                year = int.Parse(date[1]);
+                            }
+                            else 
+                                year = "2020";                          
+                          
+                        }
+                        else
                         {
                             mth = DateTime.ParseExact(date[0], "MMMM", CultureInfo.CurrentCulture).Month;
                             year = date[2];
-                        }
+                        }                       
 
-                    }
+                       var finalBirthDate = new DateTime(year, mth,1);
+                       mth = finalBirthDate.Month;
+                       year = finalBirthDate.Year;
+                        if (year < 100)
+                            year = CultureInfo.CurrentCulture.Calendar.ToFourDigitYear(year);
 
-                    UpdateField(colSelected, mth.ToString());
+
+                    }                   
+                    UpdateField("edtBMth", mth.ToString());
                     UpdateField("edtByr", year.ToString());
                 }
                 else if (colSelected == "edtdMth")
@@ -421,8 +508,8 @@ namespace IndyPro22DatabaseManagementTool
                     }
 
                     List<string> date = data.Split(' ').ToList();
-                    dynamic mth;
-                    dynamic year;
+                    dynamic mth = 1;
+                    dynamic year = 1900;
                     bool successfullyParsed = int.TryParse(date[0], out int ignoreMe);
                     if (successfullyParsed)
                     {
@@ -434,17 +521,69 @@ namespace IndyPro22DatabaseManagementTool
                         var d1 = DateTime.TryParse(data, out DateTime newDate);
                         if (d1)
                         {
+
                             mth = newDate.Month;
                             year = newDate.Year;
+                            if (year == 2022)
+                                year = 2020;
                         }
-                        else// must be in text format
+                        else if (data.IndexOf('-', StringComparison.Ordinal) > 0 && data.Any(x => char.IsLetter(x)))
+                        {
+                            date = data.Split('-').ToList();
+
+                            var dateFormat1 = date[0];
+                            var isFullMonthname = System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.MonthGenitiveNames.Contains(dateFormat1);
+                            var isAbbMonthname = System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.AbbreviatedMonthGenitiveNames.Contains(dateFormat1);
+                            if (isFullMonthname || isAbbMonthname)
+                            {
+                                // Handle the first part being
+                                mth = dateFormat1;
+                                if (isAbbMonthname)
+                                    mth = Array.IndexOf(monthAbbrev, mth) + 1;
+                                else
+                                    mth = DateTime.ParseExact(date[0], "MMMM", CultureInfo.CurrentCulture).Month;
+                            }
+                            var dateFormat2 = date[1];
+                            isFullMonthname = System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.MonthGenitiveNames.Contains(dateFormat2);
+                            isAbbMonthname = System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.AbbreviatedMonthGenitiveNames.Contains(dateFormat2);
+                            if (isFullMonthname || isAbbMonthname)
+                            {
+                                // Handle the first part being
+                                mth = dateFormat2;
+                                if (isAbbMonthname)
+                                    mth = Array.IndexOf(monthAbbrev, mth) + 1;
+                                else
+                                    mth = DateTime.ParseExact(date[0], "MMMM", CultureInfo.CurrentCulture).Month;
+                            }
+                            ValidYear = int.TryParse(date[0], out int newDateYRd);
+                            if (ValidYear)
+                            {
+                                year = int.Parse(date[0]);
+                            }
+                            ValidYear = int.TryParse(date[1], out int newDateYRd2);
+                            if (ValidYear)
+                            {
+                                year = int.Parse(date[1]);
+                            }
+                            else
+                                year = "2020";
+
+
+                        }
+                        else
                         {
                             mth = DateTime.ParseExact(date[0], "MMMM", CultureInfo.CurrentCulture).Month;
                             year = date[2];
                         }
+                        var finalBirthDate = new DateTime(year, mth, 1);
+                        mth = finalBirthDate.Month;
+                        year = finalBirthDate.Year;
+                        if (year < 100)
+                            year = CultureInfo.CurrentCulture.Calendar.ToFourDigitYear(year);
                     }
+                   
 
-                   UpdateField(colSelected, mth.ToString());
+                   UpdateField("edtdMth", mth.ToString());
                    UpdateField("edtDyr", year.ToString());
                 }
                 else if (colSelected == "edtCity")
@@ -591,6 +730,138 @@ namespace IndyPro22DatabaseManagementTool
                 }
 
             }
+
+        }        
+
+        public void GetFilePath()
+        {
+            using (OpenFileDialog openFileDialog = new OpenFileDialog())
+            {
+                openFileDialog.InitialDirectory = $"C:\\Users\\jwest\\OneDrive\\Documents\\GitHub\\IndyWrestling\\Assets\\StreamingAssets\\MamasHomeCooking\\DONOTDELETE";
+                openFileDialog.Filter = "DB files (*.ip2)|*.ip2|All files (*.*)|*.*";
+                openFileDialog.FilterIndex = 2;
+                openFileDialog.RestoreDirectory = true;
+
+                if (openFileDialog.ShowDialog() == DialogResult.OK)
+                {
+                    //Get the path of specified file
+                    filePath = openFileDialog.FileName;
+                    DB.SetDb($"URI=file:{filePath}");
+                }
+            }
+        }
+
+        private void btnGetDB_Click(object sender, EventArgs e)
+        {
+           GetFilePath();
+        }
+
+        private void Navigate()
+        {
+            if (addressBar.Text == "") return;
+            if (webView != null && webView.CoreWebView2 != null)
+            {
+                webView.CoreWebView2.Navigate(addressBar.Text);
+            }
+        }
+
+        private void goButton_Click(object sender, EventArgs e)
+        {
+            Navigate();
+        }
+
+        private void addressBar_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            if (e.KeyChar == (char)Keys.Return)
+            {
+                Navigate();
+            }
+        }
+
+        private void btnFB_Click(object sender, EventArgs e)
+        {
+            currentSM = SocialMedia.FaceBook;
+            addressBar.Text = $"https://www.facebook.com/{edtWork.SelectedText}";
+        }
+
+        private void webView_SourceChanged(object sender, CoreWebView2SourceChangedEventArgs e)
+        {
+            addressBar.Text = webView.Source.ToString();
+        }
+
+        private void button10_Click(object sender, EventArgs e)
+        {
+            switch (currentSM)
+            {
+                case SocialMedia.FaceBook:
+                    edtFB.Text = addressBar.Text;
+                    break;
+                case SocialMedia.Twitter:
+                    edtTW.Text = addressBar.Text;
+                    break;
+                case SocialMedia.Twitch:
+                    edtTWC.Text = addressBar.Text;
+                    break;
+                case SocialMedia.TikTok:
+                    edtTT.Text = addressBar.Text;
+                    break;
+                case SocialMedia.Instgram:
+                    edtIG.Text = addressBar.Text;
+                    break;
+                case SocialMedia.URL:
+                    edtURL.Text = addressBar.Text;
+                    break;
+                case SocialMedia.YouTube:
+                    edtYT.Text = addressBar.Text;
+                    break;
+            }
+        }
+
+        private void btnTW_Click(object sender, EventArgs e)
+        {
+            currentSM = SocialMedia.Twitter;
+            addressBar.Text = $"https://www.twitter.com/{edtWork.SelectedText.Replace("@","")}";
+        }
+
+        private void btnIG_Click(object sender, EventArgs e)
+        {
+            currentSM = SocialMedia.Instgram;
+            addressBar.Text = $"https://www.Instagram.com/{edtWork.SelectedText.Replace("@", "")}";
+        }
+
+        private void btnTT_Click(object sender, EventArgs e)
+        {
+            currentSM = SocialMedia.TikTok;
+            addressBar.Text = $"https://www.TikTok.com/{edtWork.SelectedText.Replace("@", "")}";
+        }
+
+        private void btnYT_Click(object sender, EventArgs e)
+        {
+            currentSM = SocialMedia.YouTube;
+            addressBar.Text = $"https://www.youtube.com/{edtWork.SelectedText.Replace("@", "")}";
+        }
+
+        private void btnTwitch_Click(object sender, EventArgs e)
+        {
+            currentSM = SocialMedia.Twitch;
+            addressBar.Text = $"https://www.twitch.tv/{edtWork.SelectedText.Replace("@", "")}";
+        }
+
+        private void btnURL_Click(object sender, EventArgs e)
+        {
+            currentSM = SocialMedia.URL;
+            addressBar.Text = $"https://{edtWork.SelectedText.Replace("@", "")}";
+        }
+
+        private void addressBar_TextChanged(object sender, EventArgs e)
+        {
+            Navigate();
+        }
+
+        private void cbState_SelectedValueChanged(object sender, EventArgs e)
+        {
+            if (cbState.SelectedIndex == 0) return;
+            GetLatLong();
 
         }
     }
