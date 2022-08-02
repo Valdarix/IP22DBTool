@@ -417,6 +417,7 @@ namespace IndyPro22DatabaseManagementTool
             {              
                 if (colSelected == "edtBMth")
                 {
+                    data = data.Replace("nd", "").Replace("th", "").Replace("st", "").Replace("rd", "");
                     //parse the date and post both
                     List<string> date = data.Split(' ').ToList();
                     dynamic mth = 1;
@@ -500,6 +501,7 @@ namespace IndyPro22DatabaseManagementTool
                 }
                 else if (colSelected == "edtdMth")
                 {
+                    data = data.Replace("nd", "").Replace("th", "").Replace("st", "").Replace("rd","");
                     var ValidYear = int.TryParse(data, out int newDateYR);
                     if (ValidYear)
                     {
