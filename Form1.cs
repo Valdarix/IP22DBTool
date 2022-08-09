@@ -66,7 +66,8 @@ namespace IndyPro22DatabaseManagementTool
             {
                 case 0:
                     listView1.Clear();
-                    var reader = DB.GetDataReader($"Select * from Talent where Talent_ID NOT IN (Select ID FROM TalentBio) order by Name COLLATE NOCASE Asc ");                  
+                    var reader = DB.GetDataReader($"Select * from Talent order by Name COLLATE NOCASE Asc ");
+                    //var reader = DB.GetDataReader($"Select * from Talent where Talent_ID NOT IN (Select ID FROM TalentBio) order by Name COLLATE NOCASE Asc ");                  
                     foreach (DataRow row in reader.Rows)
                     {                    
                       
@@ -281,7 +282,8 @@ namespace IndyPro22DatabaseManagementTool
 
             var q = new StringBuilder();
             q.Append("Update TALENT Set ");
-            q.Append($"NICKNAME	= '{edtNick.Text.Replace("'", "''")}'" );
+            q.Append($"NAME = '{edtName.Text.Replace("'","''")}'");
+            q.Append($",NICKNAME	= '{edtNick.Text.Replace("'", "''")}'" );
             q.Append($",BIRTHMONTH = '{edtBMth.Text}'" );
             q.Append($",BIRTHYEAR = '{edtByr.Text}'" );
             q.Append($",DEBUT_MTH = '{edtdMth.Text}'" );
@@ -326,6 +328,13 @@ namespace IndyPro22DatabaseManagementTool
             q.Append($",CurrentLong = '{edtLon.Text}'" );
             q.Append($",HomeLat = '{edtLat.Text}'" );
             q.Append($",HomeLong	= '{edtLon.Text}'" );
+            q.Append($",Twitter = '{edtTW.Text}'");
+            q.Append($",Instagram = '{edtIG.Text}'");
+            q.Append($",Facebook = '{edtFB.Text}'");
+            q.Append($",Youtube = '{edtYT.Text}'");
+            q.Append($",TIKTOK = '{edtTT.Text}'");
+            q.Append($",TWITCH = '{edtTWC.Text}'");
+            q.Append($",URL = '{edtURL.Text}'");
             q.Append($" where TALENT_ID = {edtID.Text}");
             IndyPro22DatabaseManagementTool.DB.UpdateOrInsert(q.ToString());
 
@@ -337,6 +346,22 @@ namespace IndyPro22DatabaseManagementTool
             listView1.Select();
             edtWork.Clear();
 
+        }
+
+        private void SaveSMOnly()
+        {
+            var q = new StringBuilder();
+            q.Append("Update TALENT Set ");
+            q.Append($"NAME = '{edtName.Text.Replace("'", "''")}'");
+            q.Append($",Twitter = '{edtTW.Text}'");
+            q.Append($",Instagram = '{edtIG.Text}'");
+            q.Append($",Facebook = '{edtFB.Text}'");
+            q.Append($",Youtube = '{edtYT.Text}'");
+            q.Append($",TIKTOK = '{edtTT.Text}'");
+            q.Append($",TWITCH = '{edtTWC.Text}'");
+            q.Append($",URL = '{edtURL.Text}'");
+            q.Append($" where TALENT_ID = {edtID.Text}");
+            IndyPro22DatabaseManagementTool.DB.UpdateOrInsert(q.ToString());
         }
 
         private void button3_Click(object sender, EventArgs e)
@@ -865,6 +890,11 @@ namespace IndyPro22DatabaseManagementTool
             if (cbState.SelectedIndex == 0) return;
             GetLatLong();
 
+        }
+
+        private void button4_Click(object sender, EventArgs e)
+        {
+            SaveSMOnly();
         }
     }
 }

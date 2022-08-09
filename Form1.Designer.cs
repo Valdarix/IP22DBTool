@@ -131,6 +131,7 @@
             this.webView = new Microsoft.Web.WebView2.WinForms.WebView2();
             this.openFileDialog1 = new System.Windows.Forms.OpenFileDialog();
             this.btnGetDB = new System.Windows.Forms.Button();
+            this.button4 = new System.Windows.Forms.Button();
             this.panel1.SuspendLayout();
             this.groupBox4.SuspendLayout();
             this.groupBox3.SuspendLayout();
@@ -161,6 +162,7 @@
             // 
             // panel1
             // 
+            this.panel1.Controls.Add(this.button4);
             this.panel1.Controls.Add(this.goButton);
             this.panel1.Controls.Add(this.btnURL);
             this.panel1.Controls.Add(this.addressBar);
@@ -227,7 +229,7 @@
             // goButton
             // 
             this.goButton.Location = new System.Drawing.Point(925, 474);
-            this.goButton.Margin = new System.Windows.Forms.Padding(1, 1, 1, 1);
+            this.goButton.Margin = new System.Windows.Forms.Padding(1);
             this.goButton.Name = "goButton";
             this.goButton.Size = new System.Drawing.Size(79, 17);
             this.goButton.TabIndex = 65;
@@ -1158,7 +1160,7 @@
             // button2
             // 
             this.button2.Font = new System.Drawing.Font("Segoe UI", 20F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.button2.Location = new System.Drawing.Point(1123, 437);
+            this.button2.Location = new System.Drawing.Point(1123, 394);
             this.button2.Name = "button2";
             this.button2.Size = new System.Drawing.Size(185, 42);
             this.button2.TabIndex = 42;
@@ -1265,13 +1267,23 @@
             // btnGetDB
             // 
             this.btnGetDB.Location = new System.Drawing.Point(8, 142);
-            this.btnGetDB.Margin = new System.Windows.Forms.Padding(1, 1, 1, 1);
+            this.btnGetDB.Margin = new System.Windows.Forms.Padding(1);
             this.btnGetDB.Name = "btnGetDB";
             this.btnGetDB.Size = new System.Drawing.Size(79, 22);
             this.btnGetDB.TabIndex = 63;
             this.btnGetDB.Text = "GetDB";
             this.btnGetDB.UseVisualStyleBackColor = true;
             this.btnGetDB.Click += new System.EventHandler(this.btnGetDB_Click);
+            // 
+            // button4
+            // 
+            this.button4.Location = new System.Drawing.Point(540, 408);
+            this.button4.Name = "button4";
+            this.button4.Size = new System.Drawing.Size(75, 23);
+            this.button4.TabIndex = 66;
+            this.button4.Text = "SM Save";
+            this.button4.UseVisualStyleBackColor = true;
+            this.button4.Click += new System.EventHandler(this.button4_Click);
             // 
             // Form1
             // 
@@ -1415,5 +1427,6 @@
         private Button btnGetDB;
         private TextBox addressBar;
         private Button goButton;
+        private Button button4;
     }
 }
